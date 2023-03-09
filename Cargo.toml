@@ -1,0 +1,30 @@
+[package]
+name = "coco"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+minifb = "0.23.0"
+clap = { version = "4.0.10", features = ["derive"] }
+clap-num = "1.0.2"
+lazy_static = "1.4.0"
+regex = "1.5"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_yaml = "0.9.17"
+cpal = "0.15.0"
+spin_sleep = "1.1.1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows = {version = "0.42.0", features = ["Win32_System_Console", "Win32_Foundation"]}
+
+[[test]]
+name="dm-test"
+path="src/dm_test.rs"
+harness=false
+
+[[bin]]
+name = "coco"
+path = "./src/main.rs"

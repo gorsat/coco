@@ -1,0 +1,11 @@
+/target
+*.lst
+*.sym
+*.hex
+*.rom
+*.bin
+*.ccc
+*.csv
+*.wav
+.DS_Store
+.vscode
