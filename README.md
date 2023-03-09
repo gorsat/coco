@@ -58,12 +58,16 @@ This is a little demo program that lets you quickly try the emulator by simply c
 > On my Pop! box I did this with ```sudo apt install libasound2-dev```. For other flavors of 
 > linux you'll have to search up the solution.
 
+<img align="right" width="400" alt="Color Computer startup screen" src="https://user-images.githubusercontent.com/10043170/223882283-bf4745bd-4185-4f67-bd5c-4cf0fe5daeb6.png">
+
 In order to make coco behave like a real color computer, you'll have to comment out the  ``` - path: "hello.asm"``` line and then uncomment the lines under ```load_rom```. 
 These lines tell the emulator where to find the ROM files and the addresses in memory at which they should be loaded. 
 
 Of course, you'll have to download the ROM files first. 
 The ROMs I'm using can be found [here](https://colorcomputerarchive.com/repo/ROMs/David%20Keil/coco-2/).
 Once you've altered [coco.yaml](/coco.yaml) and placed the ROM files in the working directory, executing ```cargo run``` should launch the emulator right into the startup screen of the original color computer. 
+<br clear="left"/>  
+
 
 ## Cartridges, Code and Load Order
 Loading cartridges can be accomplished via the command line using ```--cart <path_to_cart_file>```. 
@@ -90,11 +94,6 @@ These are loaded (but not run) in the following order:
 
 This allows you to use your own code to patch ROMs or cartridges. There's an example of such a patch in [disable_wait_routine.asm](/disable_wait_routine.asm) which circumvents one of the wait loops in Basic. I have used this to speed up debugging (because that wait loop takes several seconds to execute when the debugger is enabled). 
 If you want to generate .hex files then you can use the [6809](https://gorsat.github.com/6809) project, but there's really no need since coco will build and run .asm files directly.
-
-
-
-
-
 
 ### Options
 You can run the program with the ```--help``` (or ```-h```) option to see all the available options. 
