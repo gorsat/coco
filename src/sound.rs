@@ -352,7 +352,7 @@ impl SourceBufferPool {
 }
 
 /// This trait provides the API for buffers used between the pipeline and output threads.
-/// It's a trait because the underlying implementation used to be a different type.
+/// It's a trait because multiple underlying impelementations were tried.
 trait SourceSampleBuffer<T> {
     fn read_next_sample(&mut self) -> Option<T>;
     fn write_next_sample(&mut self, sample_data: T) -> bool;

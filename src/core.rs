@@ -32,7 +32,7 @@ impl InterruptType {
         }
     }
 }
-/// The Core struct implements the 6809 simulator and debugger.
+/// The Core struct implements the 6809 processor and debugger.
 /// Its implementation spans multiple files: runtime.rs, debug.rs, memory.rs, registers.rs
 pub struct Core {
     pub ram: Arc<RwLock<Vec<u8>>>, // hold on to this object so that it gets properly cleaned up on Drop
@@ -132,7 +132,8 @@ impl Core {
         }
     }
 
-    /// process_file drives the top level functionality (assemble, load, run) of the app
+    /// Load a program from a file into memory. Hex files are loaded directly. 
+    /// Asm files are assembled first. 
     pub fn load_program_from_file(&mut self, path: &Path) -> Result<(), Error> {
         let path = Path::new(path);
         let ext = path.extension().and_then(OsStr::to_str).unwrap_or("");
@@ -154,7 +155,7 @@ impl Core {
         }
         Ok(())
     }
-    /// load_hex copies the contents of a HexRecordCollection into simulator memory
+    /// copies the contents of a HexRecordCollection into simulator memory
     pub fn load_hex(&mut self, hex: &HexRecordCollection, hex_path: Option<&Path>) -> Result<u16, Error> {
         let mut extent = 0u16;
         let mut eof = false;
@@ -210,7 +211,7 @@ impl Core {
         Ok(extent)
     }
 
-    /// load_bin loads binary data from a file into memory at the given address
+    /// loads binary data from a file into memory at the given address
     pub fn load_bin(&mut self, bin_path: &Path, addr: u16) -> Result<usize, Error> {
         let mut f = File::open(bin_path)?;
         let extent = f.read(&mut self.raw_ram[addr as usize..])?;
@@ -223,13 +224,15 @@ impl Core {
         Ok(extent)
     }
 
+    /// simulates the presence of a cartridge (aka "program pak")
+    /// by loading a binary file at address 0xC000 and setting the cart_pending flag.
     pub fn load_cart(&mut self, cart_path: &Path) -> Result<usize, Error> {
         let size = self.load_bin(cart_path, 0xc000)?;
         self.cart_pending = true;
         Ok(size)
     }
 
-    /// load_program copies the binary representation of the given Program into simulator memory
+    /// copies the binary representation of the given Program object into simulator memory
     pub fn load_program(&mut self, program: &Program, program_path: Option<&Path>) -> Result<u16, Error> {
         let mut extent = 0u16;
         let mut rom_write = false;

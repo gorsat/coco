@@ -21,12 +21,13 @@ impl Core {
         if let Some(addr) = self.reset_vector {
             self.force_reset_vector(addr)?
         }
+        // Note that in the color computer, 0xFFnn addresses are remapped to 0xBFnn
+        // so the following read is really getting a u16 from 0xBFFFE
         self.reg.pc = self._read_u16(memory::AccessType::System, 0xfffe, None)?;
         self.program_start = self.reg.pc;
         self.faulted = false;
         Ok(())
     }
-    /// Writes the given address to the reset vector
     pub fn force_reset_vector(&mut self, addr: u16) -> Result<(), Error> {
         self._write_u8u16(memory::AccessType::System, 0xfffe, u8u16::u16(addr))
     }
@@ -59,16 +60,13 @@ impl Core {
         perf_row!("meta", self.meta_time);
         perf_row!("prep", self.prep_time);
         perf_row!("eval", self.eval_time);
-        // let read_time = self.read_time.get();
-        // perf_row!("read", read_time);
-        // perf_row!("write", self.write_time);
         perf_row!("commit", self.commit_time);
         perf_row!("total", total_time);
     }
     /// Starts executing instructions at the current program counter.  
     /// Does not set or read any registers before attempting to execute.  
-    /// Will attempt to execute until a SWI* instruction or a fault is encountered.
-    /// A normal exit results in Ok; anything else results in Err.
+    /// Will attempt to execute until an EXIT psuedo-instruction or an
+    /// unhandled exception is encountered. 
     pub fn exec(&mut self) -> Result<(), Error> {
         self.start_time = Instant::now();
         loop {
@@ -115,19 +113,7 @@ impl Core {
             expected_duration = self
                 .min_cycle
                 .and_then(|min| min.checked_mul(outcome.inst.flavor.detail.clk as u32));
-            // if let Some(expected) = expected_duration {
-            //     if function_start.elapsed() > expected * 100 {
-            //         warn!(
-            //             "instruction {} at {:04x} too slow: {} usec, should be {} usec",
-            //             outcome.inst.flavor.desc.name,
-            //             outcome.inst.ctx.pc,
-            //             function_start.elapsed().as_micros(),
-            //             expected.as_micros()
-            //         );
-            //         info!("{:?}",outcome.inst.flavor.desc);
-            //     }
-            // }
-            // check for meta instructions (SWIx, SYNC, CWAI)
+            // check for meta instructions (interrupts, SYNC, CWAI, EXIT)
             if let Some(meta) = outcome.meta.as_ref() {
                 let it = meta.to_interrupt_type();
                 match meta {
@@ -166,6 +152,8 @@ impl Core {
         let mut irq;
         let mut firq = false;
         // check for work that needs to be done on hsync
+        // (using hsync as the period at which to poll for pending interrupts
+        // rather than checking between every instruction)
         if self.hsync_prev.elapsed() >= HSYNC_PERIOD {
             self.hsync_prev = Instant::now();
             // check for hardware firq
@@ -208,16 +196,17 @@ impl Core {
                 }
             }
         }
-        // finally check to make sure we didn't execute this instruction too quickly
+        // finally, if we're limiting CPU speed, then check to make sure we didn't execute this instruction too quickly
         if let Some(remaining_time) = expected_duration.and_then(|m| m.checked_sub(function_start.elapsed())) {
             let time = Instant::now();
-            while Instant::now() - time < remaining_time { /* spin */ }
+            while Instant::now() - time < remaining_time { /* spin because other sleep options are inconsistent */ }
         }
         self.meta_time += meta_start.unwrap().elapsed();
         Ok(())
     }
 
     // helper function for interrupt handling
+    // simply pushes the named register on the system stack
     pub fn system_psh(&mut self, reg: registers::Name) -> Result<(), Error> {
         let mut addr = self.reg.get_register(registers::Name::S).u16();
         if addr < registers::reg_size(reg) {
@@ -228,6 +217,7 @@ impl Core {
         self.reg.set_register(registers::Name::S, u8u16::u16(addr));
         Ok(())
     }
+    // sets up the stack frame for an interrupt
     pub fn stack_for_interrupt(&mut self, entire: bool) -> Result<(), Error> {
         // save the appropriate registers
         self.system_psh(registers::Name::PC)?;
@@ -240,6 +230,7 @@ impl Core {
             self.system_psh(registers::Name::A)?;
         }
         // remember whether we pushed everything onto the stack
+        // Note that this flag is set in cc prior to pushing cc on the stack
         self.reg.cc.set(registers::CCBit::E, entire);
         self.system_psh(registers::Name::CC)?;
         Ok(())
@@ -304,7 +295,6 @@ impl Core {
         // get the base op code
         loop {
             inst.buf[inst.size as usize] = self._read_u8(AccessType::Program, live_ctx.pc + inst.size, None)?;
-            // inst.buf[inst.size as usize] = unsafe { *self.raw_ram.offset((live_ctx.pc + inst.size) as isize) };
             op16 |= inst.buf[inst.size as usize] as u16;
             inst.size += 1;
             if inst.size == 1 && instructions::is_high_byte_of_16bit_instruction(inst.buf[0]) {
@@ -380,10 +370,9 @@ impl Core {
         }
     }
 
-    /// Performs the general setup work for an instruction based on addressing mode.
-    /// This includes determining the effective address for the instruction,
-    /// updating the instruction size, modifying any registers that are changed by the addressing mode (e.g. ,X+),
-    /// and providing a disassembled string representing the operand.
+    /// Determine the effective address for the instruction, update the instruction size, 
+    /// modify any registers that are changed by the addressing mode (e.g. ,X+),
+    /// and provide a disassembled string representing the operand (if help_humans() == true).
     /// Changes are reflected in the provided inst and live_ctx objects.
     fn process_addressing_mode(
         &self, inst: &mut instructions::Instance, live_ctx: &mut registers::Set,
@@ -607,7 +596,6 @@ impl Core {
                             inst.operand = Some(format!("{},PC", offset));
                         }
                     }
-                    // 0b10001110 => {} invalid
                     0b10001111 => {
                         // EA = [,address]
                         inst.ea = self._read_u16(AccessType::Program, live_ctx.pc + inst.size, None)?;

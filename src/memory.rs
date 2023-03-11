@@ -12,12 +12,10 @@ pub enum AccessType {
     System,
 }
 
-// todo: Consider moving memory access to a distinct memory controller object.
 impl Core {
     // reads one byte from RAM
     #[inline(always)]
     pub fn _read_u8(&self, _: AccessType, addr: u16, data: Option<&mut u8>) -> Result<u8, Error> {
-        // let start = Instant::now();
         // first check to see if this address is overridden by the ACIA
         if let Some(acia) = self.acia.as_ref() {
             if acia.owns_address(addr) {
@@ -60,7 +58,6 @@ impl Core {
         if let Some(data) = data {
             *data = byte;
         }
-        // self.read_time.set(self.read_time.get() + start.elapsed());
         Ok(byte)
     }
     // helper version of _read_u8 that reads a byte into a u16
@@ -106,7 +103,6 @@ impl Core {
     //
     #[inline(always)]
     pub fn _write_u8(&mut self, at: AccessType, addr: u16, data: u8) -> Result<(), Error> {
-        // let start = Instant::now();
         // first check to see if this address is overridden by the ACIA
         if let Some(acia) = self.acia.as_mut() {
             if acia.owns_address(addr) {
@@ -151,7 +147,6 @@ impl Core {
             }
             _ => warn!("Write at unimplemented address {:04x}", addr),
         }
-        // self.write_time += start.elapsed();
         Ok(())
     }
     #[inline(always)]
