@@ -38,7 +38,7 @@ impl MacroLineSegment {
             n: if i > 0 { Some(n) } else { None },
         })
     }
-    pub fn hydrate(&self, args: &Vec<&str>) -> Result<String, Error> {
+    pub fn hydrate(&self, args: &[&str]) -> Result<String, Error> {
         match self.n {
             Some(n) => {
                 if n > args.len() {
@@ -54,15 +54,13 @@ impl MacroLineSegment {
 #[derive(Debug)]
 pub struct Macro {
     pub name: String,                  // name assigned to macro by programmer
-    pub src_line_num: usize,           // line in the source on which macro defn begins
     pub arg_count: usize,              // number of args required by macro
     lines: Vec<Vec<MacroLineSegment>>, // the non-empty lines of the macro (excluding .macro and .endm lines)
 }
 impl Macro {
-    pub fn new(name: &str, line: usize) -> Self {
+    pub fn new(name: &str) -> Self {
         Macro {
             name: name.to_string(),
-            src_line_num: line,
             arg_count: 0,
             lines: Vec::new(),
         }
@@ -103,7 +101,6 @@ impl Macro {
 
 #[derive(Debug)]
 pub struct ProgramLine {
-    pub prog_line_num: usize,      // line number in program
     pub src_line_num: usize,       // corresponding line number in source
     pub src: String,               // verbatim line from source
     pub label: Option<String>,     // label defined on this line
@@ -140,7 +137,6 @@ pub struct Label {
     pub line: usize,          // line number where the label is defined
     addr: u16,                // address (location) of this label
     node: Option<ValueNode>,  // if this label is defined by EQU then it has a ValueNode
-    pub refs: Vec<usize>,     // the lines that reference this label
     val_cache: Option<u8u16>, // cache of last value received from node.eval()
 }
 impl fmt::Display for Label {
@@ -185,7 +181,6 @@ impl ProgramLabels {
             line,
             addr,
             node,
-            refs: Vec::new(),
             val_cache: None,
         };
         self.map.insert(label.name.clone(), label);
@@ -325,7 +320,6 @@ pub struct Program {
     pub line_number: usize,             // current line number
     pub lines: Vec<ProgramLine>,        // program lines
     pub labels: ProgramLabels,          // all labels
-    pub macros: HashMap<String, Macro>, // all macros
     pub results: Vec<TestCriterion>,    // expected results for test criteria
     pub segs: ProgramSegments,          // program segments (defined by ORG directive)
     pub dp_dirty: bool,                 // true if DP register has been written to
@@ -345,13 +339,12 @@ impl fmt::Display for Program {
     }
 }
 impl Program {
-    pub fn new(lines: Vec<ProgramLine>, macros: HashMap<String, Macro>) -> Self {
+    pub fn new(lines: Vec<ProgramLine>) -> Self {
         Program {
             addr: 0,
             line_number: 0,
             lines,
             labels: ProgramLabels::new(),
-            macros,
             results: Vec::new(),
             segs: ProgramSegments::new(),
             dp_dirty: false,

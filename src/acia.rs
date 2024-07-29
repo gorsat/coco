@@ -13,7 +13,6 @@ const TDRE: u8 = 0b00000010; // transmit data register empty
 
 pub struct Acia {
     pub addr: u16,
-    pub handle: Option<thread::JoinHandle<Result<(), Error>>>,
     txout: Sender<u8>,
     rxin: Receiver<u8>,
     recv_cache: RefCell<Option<u8>>,
@@ -78,7 +77,7 @@ impl Acia {
         const MSEC_10: Duration = Duration::from_millis(10);
 
         let thread_tty_count = Arc::clone(&tty_count);
-        let handle = Some(thread::spawn(move || {
+        let _handle = Some(thread::spawn(move || -> Result<(), Error> {
             let listener = TcpListener::bind(format!("127.0.0.1:{}", config::ARGS.acia_port))
                 .map_err(|e| Error::new(ErrorKind::General, None, e.to_string().as_str()))?;
             info!(
@@ -157,7 +156,6 @@ impl Acia {
         }));
         Ok(Acia {
             addr,
-            handle,
             txout,
             rxin,
             recv_cache: RefCell::new(None),

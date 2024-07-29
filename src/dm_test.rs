@@ -99,8 +99,8 @@ static mut G_RAM: Ram = Ram {
     vram_offset: 0,
 };
 impl Ram {
-    pub fn get_self() -> &'static Self { unsafe { &G_RAM } }
-    pub fn get_self_mut() -> &'static mut Self { unsafe { &mut G_RAM } }
+    pub fn get_self() -> &'static Self { unsafe { &*std::ptr::addr_of!(G_RAM) } }
+    pub fn get_self_mut() -> &'static mut Self { unsafe { &mut *std::ptr::addr_of_mut!(G_RAM) } }
     pub fn init() { Self::get_self_mut().ram = Some(Arc::new(RwLock::new(vec![0u8; 0x2000]))); }
     pub fn get_ram_clone() -> Arc<RwLock<Vec<u8>>> { Self::get_self().ram.as_ref().unwrap().clone() }
     pub fn set_vram_offset(vram_offset: usize) { Self::get_self_mut().vram_offset = vram_offset }

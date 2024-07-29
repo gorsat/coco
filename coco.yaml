@@ -1,7 +1,7 @@
 load_rom:
-  # - path: "BASIC.ROM"
-  #   addr: 0xa000
-  # - path: "EXTBASIC.ROM"
-  #   addr: 0x8000
+  - path: "BASIC.ROM"
+    addr: 0xa000
+  - path: "EXTBASIC.ROM"
+    addr: 0x8000
 load_code:
-  - path: "hello.asm"
+  # - path: "hello.asm"

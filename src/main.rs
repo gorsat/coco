@@ -83,8 +83,9 @@ fn main() {
 /// - load any ROM(s) specified in the config file
 /// - load any code (asm or hex) specified in the config file
 /// - load code specified on the command line
-/// This load order allows the user to replace segments of the code in 
-/// ROM or cartridge programs with their own custom code. 
+/// 
+/// This load order allows the user to replace segments of the code in
+/// ROM or cartridge programs with their own custom code.
 fn compute_thread(core: &mut Core) -> Result<(), Error> {
     // try to load a cartridge
     if let Some(cart) = config::ARGS.cart.as_ref() {

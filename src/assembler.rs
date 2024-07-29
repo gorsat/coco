@@ -67,7 +67,6 @@ impl Assembler {
                         operation: Option<String>,
                         operand: Option<String>| {
             let pl = ProgramLine {
-                prog_line_num: pls.len() + 1,
                 src_line_num,
                 src,
                 label,
@@ -108,7 +107,7 @@ impl Assembler {
                         ));
                     }
                     // create a new Macro object and hold it in the mo Option
-                    mo = Some(Macro::new(&name, src_line_num));
+                    mo = Some(Macro::new(&name));
                     add_line(&mut prog_lines, src_line_num, format!("; {}", &line), None, None, None);
                     continue;
                 }
@@ -202,7 +201,7 @@ impl Assembler {
             // a macro definition was begun but never ended
             return Err(syntax_err!(format!("no end found for macro \"{}\"", m.name)));
         }
-        Ok(Program::new(prog_lines, macros))
+        Ok(Program::new(prog_lines))
     }
 
     /// Attempt to load and build an assembly language program from a file with the given path.

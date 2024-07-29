@@ -589,6 +589,7 @@ impl Core {
                         // ,PC + 16 bit offset
                         let offset = self._read_u16(AccessType::Program, live_ctx.pc + inst.size, None)? as i16;
                         inst.size += 2;
+                        // Note: effective address is relative to the program counter's NEW value (the address of the next instruction)
                         let (pc, _) = u16::overflowing_add(live_ctx.pc, inst.size);
                         let (addr, _) = u16::overflowing_add(pc, offset as u16);
                         inst.ea = addr;

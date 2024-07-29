@@ -35,11 +35,11 @@ impl InterruptType {
 /// The Core struct implements the 6809 processor and debugger.
 /// Its implementation spans multiple files: runtime.rs, debug.rs, memory.rs, registers.rs
 pub struct Core {
-    pub ram: Arc<RwLock<Vec<u8>>>, // hold on to this object so that it gets properly cleaned up on Drop
+    pub _ram: Arc<RwLock<Vec<u8>>>, // hold on to this object so that it gets properly cleaned up on Drop
     pub raw_ram: &'static mut [u8],    // but the CPU will directly access memory via this slice
     pub ram_top: u16,              // keep track of where the caller wants ram to end
     pub sam: Arc<Mutex<sam::Sam>>,
-    pub vdg: Arc<Mutex<vdg::Vdg>>,
+    pub _vdg: Arc<Mutex<vdg::Vdg>>,
     pub pia0: Arc<Mutex<pia::Pia0>>,
     pub pia1: Arc<Mutex<pia::Pia1>>,
     pub reg: registers::Set,       // the full set of 6809 registers
@@ -59,8 +59,8 @@ pub struct Core {
     pub prep_time: Duration,       // the total time spent preparing to call eval methods for all instructions
     pub commit_time: Duration,     // the total time spent committing the Outcome of all instructions
     pub meta_time: Duration,       // the time spent outside of instruction prep and evaluation
-    pub read_time: Cell<Duration>, // the time spent reading memory (in Cell for interior mutability)
-    pub write_time: Duration,      // the time spent writing to memory
+    pub _read_time: Cell<Duration>, // the time spent reading memory (in Cell for interior mutability)
+    pub _write_time: Duration,      // the time spent writing to memory
     pub min_cycle: Option<Duration>, // the minimum duration of a clock cycle
     /* fields for debugging */
     pub in_debugger: bool,
@@ -92,11 +92,11 @@ impl Core {
             unsafe { std::slice::from_raw_parts_mut(ram.as_mut_ptr(), ram.len()) }
         };
         Core {
-            ram,
+            _ram: ram,
             raw_ram,
             ram_top,
             sam,
-            vdg,
+            _vdg: vdg,
             pia0,
             pia1,
             reg: { Default::default() },
@@ -114,8 +114,8 @@ impl Core {
             prep_time: Duration::ZERO,
             commit_time: Duration::ZERO,
             meta_time: Duration::ZERO,
-            read_time: Cell::new(Duration::ZERO),
-            write_time: Duration::ZERO,
+            _read_time: Cell::new(Duration::ZERO),
+            _write_time: Duration::ZERO,
             min_cycle: config::ARGS.mhz.map(|m| Duration::from_secs_f32(0.9 / (m * 1e6))),
             in_debugger: false,
             breakpoints: Vec::new(),

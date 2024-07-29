@@ -31,14 +31,14 @@ pub struct HexRecord {
 }
 impl Display for HexRecord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let data = if let Some(data) = &self.data {
-            data.iter().map(|&b| format!("{:02x}", b)).collect::<String>()
-        } else {
-            "".to_string()
-        };
+        let mut dstr = String::new();
+        if let Some(data) = &self.data {
+            use fmt::Write;
+            data.iter().for_each(|&b| _ = write!(dstr, "{:02x}", b));
+        }
         writeln!(
             f,
-            ":{:02x}{:04x}{:02x}{data}{:02x}",
+            ":{:02x}{:04x}{:02x}{dstr}{:02x}",
             self.data_size, self.address, self.record_type, self.checksum
         )
     }

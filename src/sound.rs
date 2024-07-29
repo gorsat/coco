@@ -357,7 +357,6 @@ trait SourceSampleBuffer<T> {
     fn read_next_sample(&mut self) -> Option<T>;
     fn write_next_sample(&mut self, sample_data: T) -> bool;
     fn capacity_remaining(&self) -> usize;
-    fn capacity(&self) -> usize;
     fn len(&self) -> usize;
     fn clear(&mut self);
 }
@@ -385,7 +384,6 @@ where
         }
     }
     fn capacity_remaining(&self) -> usize { self.q.len() - self.tail }
-    fn capacity(&self) -> usize { self.q.len() }
     fn len(&self) -> usize { self.tail - self.head }
     fn clear(&mut self) {
         self.head = 0;

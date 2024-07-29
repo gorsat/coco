@@ -183,7 +183,6 @@ pub struct Char {
     inverted: bool,
 }
 impl Char {
-    ///
     #[inline(always)]
     pub fn try_from_ascii(byte: u8) -> Option<Self> {
         let i = match byte {
